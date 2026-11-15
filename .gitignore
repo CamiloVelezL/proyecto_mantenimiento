@@ -1,0 +1,10 @@
+# Dependencias
+
+# Variables de entorno
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

@@ -2,7 +2,7 @@
 
 **Asignatura:** Aplicaciones y Servicios Web
 **Programa:** Tecnología en Desarrollo de Software
-**Integrante:** Camilo Andres Velez Luna
+**Integrante:** Camilo Andres Velez Luna - Luis Marin
 **Repositorio:** https://github.com/CamiloVelezL/proyecto_mantenimiento
 
 ## 1. Información General

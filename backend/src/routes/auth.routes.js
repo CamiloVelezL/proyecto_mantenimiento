@@ -48,4 +48,16 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.get('/tecnicos', async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, nombre, email FROM usuarios WHERE rol = 'Mantenimiento'"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener técnicos' });
+  }
+});
+
 export default router;

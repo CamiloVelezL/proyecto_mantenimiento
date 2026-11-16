@@ -14,10 +14,8 @@ const DashboardCoordinacion = () => {
       const resReportes = await api.get('/reportes');
       setReportes(resReportes.data);
       
-      setTecnicos([
-        { id: 2, nombre: 'Técnico de Prueba 1' },
-        { id: 3, nombre: 'Técnico de Prueba 2' }
-      ]);
+      const resTecnicos = await api.get('/auth/tecnicos');
+      setTecnicos(resTecnicos.data);
     } catch (error) {
       console.error('Error al cargar datos', error);
     }

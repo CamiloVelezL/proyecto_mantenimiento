@@ -27,17 +27,42 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Actualizar estado (CA-02, CA-05) 
+//estado (CA-02, CA-05) 
 router.patch('/:id/estado', async (req, res) => {
   const { id } = req.params;
   const { nuevo_estado } = req.body;
+
   try {
+    // 1. Obtener el reporte actual
+    const reporteActual = await pool.query('SELECT estado FROM reportes WHERE id = $1', [id]);
+    if (reporteActual.rows.length === 0) {
+      return res.status(404).json({ error: 'Reporte no encontrado' });
+    }
+    const estadoActual = reporteActual.rows[0].estado;
+
+    // 2. Validar las transiciones permitidas
+    const transicionesValidas = {
+      'Reportado': ['En Evaluacion'],
+      'En Evaluacion': ['Asignado'],
+      'Asignado': ['En Proceso'],
+      'En Proceso': ['Cerrado'],
+      'Cerrado': [] 
+    };
+
+    if (!transicionesValidas[estadoActual] || !transicionesValidas[estadoActual].includes(nuevo_estado)) {
+      return res.status(400).json({ 
+        error: `Transición no permitida de "${estadoActual}" a "${nuevo_estado}"` 
+      });
+    }
+
+    // 3. Si es válido, actualizamos
     const result = await pool.query(
       'UPDATE reportes SET estado = $1 WHERE id = $2 RETURNING *',
       [nuevo_estado, id]
     );
     res.json(result.rows[0]);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al actualizar estado' });
   }
 });

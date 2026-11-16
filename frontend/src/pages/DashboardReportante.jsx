@@ -25,24 +25,24 @@ const DashboardReportante = () => {
       navigate('/');
       return;
     }
-
-
     const inicializar = async () => {
-      try {
-        const response = await api.get('/reportes');
-        const misReportes = response.data.filter(r => r.reportante_id === usuario.id);
-        setReportes(misReportes);
-      } catch (error) {
-        console.error('Error al cargar reportes iniciales', error);
-      }
+        await cargarReportes();
     };
-
     inicializar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
   const handleCrearReporte = async (e) => {
     e.preventDefault();
+    if (!descripcion.trim()) {
+      alert('La descripción de la falla es obligatoria.');
+      return;
+    }
+    if (!espacioId) {
+      alert('Debe indicar el ID del espacio o instalación.');
+      return;
+    }
+
     try {
       await api.post('/reportes', {
         descripcion: descripcion,
@@ -54,35 +54,51 @@ const DashboardReportante = () => {
       cargarReportes();
     } catch (error) {
       console.error('Error al crear reporte', error);
+      alert('Ocurrió un error al crear el reporte.');
     }
   };
 
   if (!usuario) return null;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Dashboard Reportante - {usuario.nombre}</h1>
-      <button onClick={() => { localStorage.removeItem('usuario'); navigate('/'); }}>Cerrar Sesión</button>
+    <div className="dashboard-container">
+      <header className="dashboard-header">
+        <h1>Dashboard Reportante - {usuario.nombre}</h1>
+        <button className="btn-logout" onClick={() => { localStorage.removeItem('usuario'); navigate('/'); }}>
+          Cerrar Sesión
+        </button>
+      </header>
 
-      <div style={{ marginTop: '30px', border: '1px solid #ccc', padding: '20px' }}>
+      <div className="card">
         <h3>Reportar Nueva Falla</h3>
-        <form onSubmit={handleCrearReporte}>
-          <div>
+        <form onSubmit={handleCrearReporte} style={{ marginTop: '1rem' }}>
+          <div className="form-group">
             <label>Descripción de la falla:</label>
-            <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows="3" style={{ width: '100%' }} />
+            <textarea 
+              value={descripcion} 
+              onChange={(e) => setDescripcion(e.target.value)} 
+              rows="3" 
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db' }} 
+              placeholder="Describa el problema detalladamente..."
+            />
           </div>
-          <div style={{ marginTop: '10px' }}>
+          <div className="form-group">
             <label>ID del Espacio (Aula, Oficina, etc.):</label>
-            <input type="number" value={espacioId} onChange={(e) => setEspacioId(e.target.value)} />
+            <input 
+              type="number" 
+              value={espacioId} 
+              onChange={(e) => setEspacioId(e.target.value)} 
+              placeholder="Ej: 1"
+            />
           </div>
-          <button type="submit" style={{ marginTop: '10px' }}>Enviar Reporte</button>
+          <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '0.75rem 2rem' }}>Enviar Reporte</button>
         </form>
       </div>
 
-      <div style={{ marginTop: '30px' }}>
+      <div className="card">
         <h3>Mis Reportes</h3>
-        {reportes.length === 0 ? <p>No tienes reportes creados.</p> : (
-          <table border="1" cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        {reportes.length === 0 ? <p style={{ marginTop: '1rem' }}>No tienes reportes creados.</p> : (
+          <table className="table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -96,7 +112,11 @@ const DashboardReportante = () => {
                 <tr key={rep.id}>
                   <td>{rep.id}</td>
                   <td>{rep.descripcion}</td>
-                  <td><strong>{rep.estado}</strong></td>
+                  <td>
+                    <span className={`badge badge-${rep.estado.toLowerCase().replace(' ', '-')}`}>
+                      {rep.estado}
+                    </span>
+                  </td>
                   <td>{new Date(rep.fecha_creacion).toLocaleDateString()}</td>
                 </tr>
               ))}

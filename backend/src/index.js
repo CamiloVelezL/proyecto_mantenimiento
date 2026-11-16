@@ -20,7 +20,18 @@ app.use('/api/reportes', reportesRoutes);
 app.use('/api/intervenciones', intervencionesRoutes);
 
 app.get('/', (req, res) => {
-  res.send('API de Mantenimiento funcionando correctamente');
+  res.send('API de Mantenimiento funcionando correctamente. Ve a /api/... para usar los endpoints.');
+});
+
+// Ruta de prueba de base de datos
+app.get('/test-db', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW()');
+    res.json({ mensaje: 'Conexión a DB exitosa', fecha: result.rows[0].now });
+  } catch (error) {
+    console.error(error); // Esto te mostrará el error real en la terminal
+    res.status(500).json({ error: 'Error conectando a la base de datos' });
+  }
 });
 
 app.listen(PORT, () => {

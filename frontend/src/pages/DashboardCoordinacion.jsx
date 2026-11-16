@@ -56,14 +56,18 @@ const DashboardCoordinacion = () => {
 
   if (!usuario) return null;
 
-  return (
-    <div style={{ padding: '20px' }}>
-      <h1>Dashboard Coordinación - {usuario.nombre}</h1>
-      <button onClick={() => { localStorage.removeItem('usuario'); navigate('/'); }}>Cerrar Sesión</button>
+    return (
+    <div className="dashboard-container">
+      <header className="dashboard-header">
+        <h1>Dashboard Coordinación - {usuario.nombre}</h1>
+        <button className="btn-logout" onClick={() => { localStorage.removeItem('usuario'); navigate('/'); }}>
+          Cerrar Sesión
+        </button>
+      </header>
 
-      <div style={{ marginTop: '30px' }}>
+      <div className="card">
         <h3>Todos los Reportes</h3>
-        <table border="1" cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="table">
           <thead>
             <tr>
               <th>ID</th>
@@ -77,13 +81,17 @@ const DashboardCoordinacion = () => {
               <tr key={rep.id}>
                 <td>{rep.id}</td>
                 <td>{rep.descripcion}</td>
-                <td><strong>{rep.estado}</strong></td>
+                <td>
+                  <span className={`badge badge-${rep.estado.toLowerCase().replace(' ', '-')}`}>
+                    {rep.estado}
+                  </span>
+                </td>
                 <td>
                   {rep.estado === 'Reportado' && (
-                    <button onClick={() => handleCambiarEstado(rep.id, 'En Evaluacion')}>Evaluar</button>
+                    <button className="btn-primary" style={{ width: 'auto', padding: '5px 10px', marginTop: 0 }} onClick={() => handleCambiarEstado(rep.id, 'En Evaluacion')}>Evaluar</button>
                   )}
                   {rep.estado === 'En Evaluacion' && (
-                    <select onChange={(e) => handleAsignar(rep.id, e.target.value)} defaultValue="">
+                    <select className="form-group" onChange={(e) => handleAsignar(rep.id, e.target.value)} defaultValue="" style={{ padding: '5px', borderRadius: '5px' }}>
                       <option value="" disabled>Asignar Técnico...</option>
                       {tecnicos.map(t => (
                         <option key={t.id} value={t.id}>{t.nombre}</option>
@@ -91,7 +99,7 @@ const DashboardCoordinacion = () => {
                     </select>
                   )}
                   {rep.estado === 'En Proceso' && (
-                    <button onClick={() => handleCambiarEstado(rep.id, 'Cerrado')} style={{ backgroundColor: 'green', color: 'white' }}>Cerrar</button>
+                    <button className="btn-primary" style={{ backgroundColor: '#059669', width: 'auto', padding: '5px 10px', marginTop: 0 }} onClick={() => handleCambiarEstado(rep.id, 'Cerrado')}>Cerrar</button>
                   )}
                 </td>
               </tr>

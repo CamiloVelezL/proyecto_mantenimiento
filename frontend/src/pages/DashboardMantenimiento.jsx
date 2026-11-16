@@ -13,7 +13,6 @@ const DashboardMantenimiento = () => {
   const cargarReportes = async () => {
     try {
       const response = await api.get('/reportes');
-      // Filtramos solo los reportes asignados a este técnico
       const misReportes = response.data.filter(r => r.asignado_id === usuario.id);
       setReportes(misReportes);
     } catch (error) {
@@ -31,7 +30,7 @@ const DashboardMantenimiento = () => {
     };
     inicializar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario, navigate]);
+  }, []);
 
   const handleIntervenir = async (e) => {
     e.preventDefault();
@@ -48,7 +47,7 @@ const DashboardMantenimiento = () => {
       });
       setIntervencion('');
       setReporteSeleccionado(null);
-      cargarReportes(); 
+      cargarReportes();
       alert('Intervención registrada. El reporte ha pasado a "En Proceso".');
     } catch (error) {
       console.error('Error al registrar intervención', error);
@@ -58,14 +57,18 @@ const DashboardMantenimiento = () => {
   if (!usuario) return null;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Dashboard Mantenimiento - {usuario.nombre}</h1>
-      <button onClick={() => { localStorage.removeItem('usuario'); navigate('/'); }}>Cerrar Sesión</button>
+    <div className="dashboard-container">
+      <header className="dashboard-header">
+        <h1>Dashboard Mantenimiento - {usuario.nombre}</h1>
+        <button className="btn-logout" onClick={() => { localStorage.removeItem('usuario'); navigate('/'); }}>
+          Cerrar Sesión
+        </button>
+      </header>
 
-      <div style={{ marginTop: '30px' }}>
+      <div className="card">
         <h3>Mis Reportes Asignados</h3>
-        {reportes.length === 0 ? <p>No tienes reportes asignados.</p> : (
-          <table border="1" cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        {reportes.length === 0 ? <p style={{ marginTop: '1rem' }}>No tienes reportes asignados.</p> : (
+          <table className="table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -79,10 +82,14 @@ const DashboardMantenimiento = () => {
                 <tr key={rep.id}>
                   <td>{rep.id}</td>
                   <td>{rep.descripcion}</td>
-                  <td><strong>{rep.estado}</strong></td>
+                  <td>
+                    <span className={`badge badge-${rep.estado.toLowerCase().replace(' ', '-')}`}>
+                      {rep.estado}
+                    </span>
+                  </td>
                   <td>
                     {rep.estado !== 'Cerrado' && (
-                      <button onClick={() => setReporteSeleccionado(rep)}>
+                      <button className="btn-primary" style={{ width: 'auto', padding: '5px 10px', marginTop: 0 }} onClick={() => setReporteSeleccionado(rep)}>
                         Registrar Intervención
                       </button>
                     )}
@@ -94,17 +101,24 @@ const DashboardMantenimiento = () => {
         )}
       </div>
 
-      {/* Formulario de Intervención */}
       {reporteSeleccionado && (
-        <div style={{ marginTop: '30px', border: '1px solid blue', padding: '20px' }}>
+        <div className="card" style={{ border: '2px solid #3b82f6' }}>
           <h3>Intervenir Reporte #{reporteSeleccionado.id}</h3>
-          <form onSubmit={handleIntervenir}>
-            <div>
+          <form onSubmit={handleIntervenir} style={{ marginTop: '1rem' }}>
+            <div className="form-group">
               <label>Descripción de la intervención:</label>
-              <textarea value={intervencion} onChange={(e) => setIntervencion(e.target.value)} rows="3" style={{ width: '100%' }} />
+              <textarea 
+                value={intervencion} 
+                onChange={(e) => setIntervencion(e.target.value)} 
+                rows="3" 
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db' }} 
+                placeholder="Detalle el trabajo realizado..."
+              />
             </div>
-            <button type="submit" style={{ marginTop: '10px' }}>Guardar Intervención</button>
-            <button type="button" onClick={() => setReporteSeleccionado(null)} style={{ marginLeft: '10px' }}>Cancelar</button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '0.75rem 2rem' }}>Guardar Intervención</button>
+              <button type="button" className="btn-logout" onClick={() => setReporteSeleccionado(null)}>Cancelar</button>
+            </div>
           </form>
         </div>
       )}

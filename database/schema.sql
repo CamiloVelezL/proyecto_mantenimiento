@@ -1,6 +1,7 @@
 -- Crear la base de datos (ejecutar manualmente en pgAdmin o psql)
 -- CREATE DATABASE mantenimiento_db;
 
+
 -- Tabla de Usuarios
 CREATE TABLE usuarios (
     id SERIAL PRIMARY KEY,

@@ -5,6 +5,7 @@ import api from '../services/api';
 const DashboardCoordinacion = () => {
   const [reportes, setReportes] = useState([]);
   const [tecnicos, setTecnicos] = useState([]); 
+  const [filtroEstado, setFiltroEstado] = useState('Todos');
   const navigate = useNavigate();
   
   const usuario = JSON.parse(localStorage.getItem('usuario'));
@@ -30,7 +31,8 @@ const DashboardCoordinacion = () => {
         await cargarDatos();
     };
     inicializar();
-  }, [usuario, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCambiarEstado = async (id, nuevoEstado) => {
     try {
@@ -52,6 +54,10 @@ const DashboardCoordinacion = () => {
     }
   };
 
+  const ESTADOS = ['Reportado', 'En Evaluacion', 'Asignado', 'En Proceso', 'Cerrado'];
+  const conteos = ESTADOS.map(e => ({ estado: e, cantidad: reportes.filter(r => r.estado === e).length }));
+  const reportesFiltrados = filtroEstado === 'Todos' ? reportes : reportes.filter(r => r.estado === filtroEstado);
+
   if (!usuario) return null;
 
     return (
@@ -64,7 +70,26 @@ const DashboardCoordinacion = () => {
       </header>
 
       <div className="card">
-        <h3>Todos los Reportes</h3>
+        <h3>Todos los Reportes ({reportesFiltrados.length})</h3>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '1rem 0' }}>
+          <button
+            className="btn-primary"
+            style={{ width: 'auto', padding: '5px 12px', marginTop: 0, opacity: filtroEstado === 'Todos' ? 1 : 0.6 }}
+            onClick={() => setFiltroEstado('Todos')}
+          >
+            Todos ({reportes.length})
+          </button>
+          {conteos.map(c => (
+            <button
+              key={c.estado}
+              className="btn-primary"
+              style={{ width: 'auto', padding: '5px 12px', marginTop: 0, opacity: filtroEstado === c.estado ? 1 : 0.6 }}
+              onClick={() => setFiltroEstado(c.estado)}
+            >
+              {c.estado} ({c.cantidad})
+            </button>
+          ))}
+        </div>
         <table className="table">
           <thead>
             <tr>
@@ -75,7 +100,7 @@ const DashboardCoordinacion = () => {
             </tr>
           </thead>
           <tbody>
-            {reportes.map(rep => (
+            {reportesFiltrados.map(rep => (
               <tr key={rep.id}>
                 <td>{rep.id}</td>
                 <td>{rep.descripcion}</td>

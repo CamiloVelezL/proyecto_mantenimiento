@@ -101,16 +101,18 @@ Regla de negocio: el estado solo avanza al siguiente de la lista y un reporte `C
 
 Dirección base: `http://localhost:3000`. Todas las peticiones y respuestas usan JSON.
 
-| Método | Ruta | Descripción | Condición de aceptación |
-|--------|------|-------------|-------------------------|
-| POST | `/api/auth/register` | Registra un usuario con la contraseña cifrada | Apoyo a todas |
-| POST | `/api/auth/login` | Inicia sesión y devuelve los datos públicos del usuario | Apoyo a todas |
-| GET | `/api/auth/tecnicos` | Lista los usuarios con rol `Mantenimiento` | CA-03 |
-| POST | `/api/reportes` | Crea un reporte en estado `Reportado` | CA-01 |
-| GET | `/api/reportes` | Lista todos los reportes, del más reciente al más antiguo | CA-06 |
-| PATCH | `/api/reportes/:id/estado` | Cambia el estado si la transición es válida | CA-02, CA-05 |
-| PATCH | `/api/reportes/:id/asignar` | Asigna un técnico y deja el reporte en `Asignado` | CA-03 |
-| POST | `/api/intervenciones` | Registra una intervención y pasa el reporte a `En Proceso` | CA-04 |
+| Método | Ruta | Descripción | Condición | Códigos de respuesta |
+|--------|------|-------------|-----------|----------------------|
+| POST | `/api/auth/register` | Registra un usuario con la contraseña cifrada | Apoyo | 201, 500 |
+| POST | `/api/auth/login` | Inicia sesión y devuelve los datos públicos del usuario | Apoyo | 200, 401, 500 |
+| GET | `/api/auth/tecnicos` | Lista los usuarios con rol `Mantenimiento` | CA-03 | 200, 500 |
+| POST | `/api/reportes` | Crea un reporte en estado `Reportado` | CA-01 | 201, 500 |
+| GET | `/api/reportes` | Lista todos los reportes, del más reciente al más antiguo | CA-06 | 200, 500 |
+| PATCH | `/api/reportes/:id/estado` | Cambia el estado si la transición es válida | CA-02, CA-05 | 200, 400, 404, 500 |
+| PATCH | `/api/reportes/:id/asignar` | Asigna un técnico y deja el reporte en `Asignado` | CA-03 | 200, 500 |
+| POST | `/api/intervenciones` | Registra una intervención y pasa el reporte a `En Proceso` | CA-04 | 201, 500 |
+
+Los errores de formato o de servidor devuelven un cuerpo `{ "error": "mensaje" }` sin datos internos. El código 500 se usa cuando la base de datos rechaza la operación.
 
 ### POST /api/auth/login
 
@@ -172,20 +174,79 @@ Entrada:
 
 Respuesta 201: la intervención creada. El reporte pasa a `En Proceso`.
 
-## 6. Diseño de la interfaz
+## 6. Recorridos de los actores
+
+Recorrido completo de un reporte, desde que se registra hasta que se cierra:
+
+```mermaid
+sequenceDiagram
+    actor R as Reportante
+    actor C as Coordinación
+    actor T as Mantenimiento
+    participant S as Sistema (API + BD)
+
+    R->>S: Registra falla (descripción y espacio)
+    S-->>R: Reporte en estado "Reportado"
+    C->>S: Consulta todos los reportes
+    C->>S: Evalúa el reporte
+    S-->>C: Estado "En Evaluación"
+    C->>S: Asigna un técnico
+    S-->>C: Estado "Asignado"
+    T->>S: Consulta sus reportes asignados
+    T->>S: Registra una intervención
+    S-->>T: Estado "En Proceso"
+    C->>S: Cierra el reporte
+    S-->>C: Estado "Cerrado"
+    R->>S: Consulta el estado de su reporte
+```
+
+Recorrido de cada actor:
+
+| Actor | Pasos principales |
+|-------|-------------------|
+| Reportante | Inicia sesión, completa el formulario de nueva falla y consulta el estado de sus reportes |
+| Coordinación | Inicia sesión, revisa todos los reportes, evalúa los nuevos, asigna un técnico a los evaluados y cierra los que están en proceso |
+| Mantenimiento | Inicia sesión, revisa los reportes que le asignaron y registra las intervenciones que realiza |
+
+## 7. Prototipos de interfaz
+
+El sistema tiene cuatro pantallas. Al iniciar sesión, la ruta `/dashboard` muestra la pantalla que corresponde al rol guardado en la sesión. Si no hay sesión, redirige a `/`.
 
 | Pantalla | Ruta | Contenido |
 |----------|------|-----------|
-| Inicio de sesión | `/` | Correo y contraseña. Al entrar redirige a `/dashboard` |
-| Reportante | `/dashboard` | Formulario de nueva falla (descripción y espacio) y tabla con sus reportes y su estado |
-| Mantenimiento | `/dashboard` | Tabla con los reportes asignados al técnico y botón para registrar intervención |
-| Coordinación | `/dashboard` | Tabla con todos los reportes, botones Evaluar y Cerrar, y selector de técnico para asignar |
-
-La ruta `/dashboard` muestra una pantalla distinta según el rol guardado en la sesión. Si no hay sesión, redirige a `/`.
+| Inicio de sesión | `/` | Correo y contraseña |
+| Reportante | `/dashboard` | Formulario de nueva falla (descripción y espacio) y tabla "Mis Reportes" con estado y fecha |
+| Mantenimiento | `/dashboard` | Tabla "Mis Reportes Asignados" y botón para registrar intervención |
+| Coordinación | `/dashboard` | Tabla "Todos los Reportes" con botones Evaluar y Cerrar, y selector de técnico para asignar |
 
 Los botones de cada acción solo aparecen cuando el estado del reporte lo permite. Por ejemplo, `Cerrar` solo se muestra en reportes `En Proceso`.
 
-## 7. Validaciones y reglas de negocio
+**Reportante: registrar falla y consultar reportes**
+
+![Pantalla del reportante](../evidencias/prueba1_crear_reporte.png)
+
+**Coordinación: evaluar y gestionar reportes**
+
+![Pantalla de coordinación](../evidencias/prueba2_evaluar.png)
+
+**Mantenimiento: registrar intervenciones**
+
+![Pantalla de mantenimiento](../evidencias/prueba5_intervenir.png)
+
+## 8. Permisos por actor
+
+| Acción | Reportante | Mantenimiento | Coordinación |
+|--------|:----------:|:-------------:|:------------:|
+| Registrar una falla | Sí | No | No |
+| Ver sus propios reportes | Sí | No | Sí |
+| Ver los reportes asignados a él | No | Sí | Sí |
+| Ver todos los reportes | No | No | Sí |
+| Evaluar un reporte | No | No | Sí |
+| Asignar un técnico | No | No | Sí |
+| Registrar una intervención | No | Sí | No |
+| Cerrar un reporte | No | No | Sí |
+
+## 9. Validaciones y reglas de negocio
 
 | Regla | Dónde se aplica |
 |-------|-----------------|
@@ -195,3 +256,17 @@ Los botones de cada acción solo aparecen cuando el estado del reporte lo permit
 | La descripción del reporte es obligatoria | Interfaz y base de datos (`NOT NULL`) |
 | Cada rol ve solo sus acciones y los reportes que le corresponden | Interfaz |
 | Un reporte siempre pertenece a un espacio y a un reportante | Base de datos (llaves foráneas) |
+
+## 10. Decisiones técnicas y requisitos relacionados
+
+| Decisión | Justificación | Condición relacionada |
+|----------|---------------|-----------------------|
+| Arquitectura cliente-servidor en tres capas | Separa la interfaz, las reglas de negocio y los datos, y permite probar la API sin la interfaz | Todas |
+| React + Vite en el frontend | Permite construir una pantalla por rol y reutilizar componentes | CA-01 a CA-06 |
+| Node.js + Express en el backend | Expone la API REST con poco código y usa el mismo lenguaje que el frontend | CA-01 a CA-06 |
+| PostgreSQL como base de datos | Base relacional con llaves foráneas y restricciones `CHECK` para conservar la consistencia | CA-01, CA-03, CA-04, CA-05 |
+| Estados controlados con una regla de transición en el servidor | Evita saltos de estado y garantiza el orden del proceso | CA-02, CA-05 |
+| Asignación guardada en `reportes.asignado_id` | Mantiene un único responsable por reporte y permite consultarlo | CA-03 |
+| Intervenciones en una tabla aparte, ligada al reporte | Conserva el historial de actuaciones de cada reporte | CA-04 |
+| Contraseñas cifradas con bcrypt | Nunca se guardan ni se devuelven en texto plano | Seguridad |
+| Variables de entorno en `.env`, con `.env.example` sin secretos | Mantiene las credenciales fuera del repositorio | Seguridad |

@@ -119,7 +119,7 @@ Los errores de formato o de servidor devuelven un cuerpo `{ "error": "mensaje" }
 Entrada:
 
 ```json
-{ "email": "coordinador@test.com", "password": "123456" }
+{ "email": "coordinador@admin.com", "password": "123456" }
 ```
 
 Respuestas:
